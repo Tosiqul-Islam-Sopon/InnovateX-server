@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -33,7 +33,7 @@ async function run() {
     const featuredProductCollection = database.collection("FeaturedProducts");
 
 
-    app.post("/products", async (req, res) =>{
+    app.post("/products", async (req, res) => {
       const product = req.body;
       const result = await productCollection.insertOne(product);
       res.send(result);
@@ -44,12 +44,18 @@ async function run() {
       const query = { "owner.email": email };
       const products = await productCollection.find(query).toArray();
       res.send(products);
-  });
-  
+    });
 
-    app.get("/featuredProducts", async(req, res) =>{
-        const products = await featuredProductCollection.find().toArray();
-        res.send(products);
+    app.delete("/products/:id", async (req, res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await productCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    app.get("/featuredProducts", async (req, res) => {
+      const products = await featuredProductCollection.find().toArray();
+      res.send(products);
     })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
@@ -66,10 +72,10 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Welcome to InnovateX!');
+  res.send('Welcome to InnovateX!');
 });
 
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
