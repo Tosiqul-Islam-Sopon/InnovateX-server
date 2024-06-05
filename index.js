@@ -46,9 +46,31 @@ async function run() {
       res.send(products);
     });
 
-    app.delete("/products/:id", async (req, res) =>{
+    app.get("/products/product/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
+      const product = await productCollection.findOne(query);
+      res.send(product);
+    })
+
+    app.patch('/products/updateProduct/:id', async (req, res) => {
+      const productId = req.params.id;
+      const updatedProductData = req.body;
+
+      const query = { _id: new ObjectId(productId) }
+      const update = {
+        $set: {
+          ...updatedProductData
+        } 
+      } 
+
+      const result = await productCollection.updateOne(query, update);
+      res.send(result);
+    });
+
+    app.delete("/products/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await productCollection.deleteOne(query);
       res.send(result);
     })
