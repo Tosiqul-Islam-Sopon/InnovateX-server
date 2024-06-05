@@ -29,10 +29,50 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const database = client.db("InnovateX");
+    const userCollection = database.collection("users");
     const productCollection = database.collection("Products");
     const featuredProductCollection = database.collection("FeaturedProducts");
 
 
+    // User apis
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "user already exist" });
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.get("/users", async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.send(users);
+    });
+
+    app.get("/users/admin/:email", async (req, res) =>{
+      const email = req.params.email;
+      const query = {email: email};
+      const user = await userCollection.findOne(query);
+      res.send(user?.role === "admin");
+    })
+
+    app.patch("/user/updateUser/:id", async (req, res) => {
+      const id = req.params.id;
+      const role = req.query.role;
+      const query = { _id: new ObjectId(id) };
+      const update = {
+        $set: {
+          role: role
+        }
+      }
+      const result = await userCollection.updateOne(query, update);
+      res.send(result);
+    });
+
+
+    // Product apis
     app.post("/products", async (req, res) => {
       const product = req.body;
       const result = await productCollection.insertOne(product);
