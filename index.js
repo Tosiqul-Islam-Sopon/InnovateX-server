@@ -51,9 +51,9 @@ async function run() {
       res.send(users);
     });
 
-    app.get("/users/admin/:email", async (req, res) =>{
+    app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {email: email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
       res.send(user?.role === "admin");
     })
@@ -79,6 +79,11 @@ async function run() {
       res.send(result);
     })
 
+    app.get("/products", async (req, res) => {
+      const products = await productCollection.find().toArray();
+      res.send(products);
+    })
+
     app.get("/products/:email", async (req, res) => {
       const email = req.params.email;
       const query = { "owner.email": email };
@@ -101,12 +106,37 @@ async function run() {
       const update = {
         $set: {
           ...updatedProductData
-        } 
-      } 
+        }
+      }
 
       const result = await productCollection.updateOne(query, update);
       res.send(result);
     });
+
+    app.patch("/products/makeFeatured/:id", async (req, res) =>{
+      const productId = req.params.id;
+      const query = { _id: new ObjectId(productId) }
+      const update = {
+        $set: {
+          featured: 'true'
+        }
+      }
+      const result = await productCollection.updateOne(query, update);
+      res.send(result);
+    })
+
+    app.patch("/products/updateStatus/:id", async (req, res) =>{
+      const productId = req.params.id;
+      const status = req.query.status;
+      const query = { _id: new ObjectId(productId) }
+      const update = {
+        $set: {
+          status: status
+        }
+      }
+      const result = await productCollection.updateOne(query, update);
+      res.send(result);
+    })
 
     app.delete("/products/:id", async (req, res) => {
       const id = req.params.id;
