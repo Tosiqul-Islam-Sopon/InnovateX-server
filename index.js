@@ -51,6 +51,32 @@ async function run() {
       res.send(users);
     });
 
+    app.get("/users/upVoteStatus/:id", async (req, res) => {
+      const id = req.params.id;
+      const userEmail = req.query.email;
+      const query = { email: userEmail };
+      const user = await userCollection.findOne(query);
+      if (user && user.upVotes) { 
+        const hasVoted = user.upVotes.includes(id); 
+        res.send(hasVoted); 
+      } else {
+        res.send(false);
+      }
+    });
+
+    app.patch("/users/upVotes/:id", async (req, res) =>{
+      const id = req.params.id;
+      const userEmail = req.query.email;
+      const query = {email: userEmail};
+      const update = {
+        $push: {
+          upVotes: id
+        }
+      };
+      const result = await userCollection.updateOne(query, update);
+      res.send(result);
+    })
+
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -84,6 +110,17 @@ async function run() {
       res.send(products);
     })
 
+    app.get("/products/featuredProducts", async (req, res) => {
+      const query = { featured: 'true' };
+      const products = await productCollection.find(query).toArray();
+      res.send(products);
+    })
+
+    app.get("/products/trendingProducts", async (req, res) => {
+      const products = await productCollection.find().sort({ upVote: -1 }).limit(6).toArray();
+      res.send(products);
+    })
+
     app.get("/products/:email", async (req, res) => {
       const email = req.params.email;
       const query = { "owner.email": email };
@@ -96,7 +133,8 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const product = await productCollection.findOne(query);
       res.send(product);
-    })
+    });
+
 
     app.patch('/products/updateProduct/:id', async (req, res) => {
       const productId = req.params.id;
@@ -113,7 +151,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/products/makeFeatured/:id", async (req, res) =>{
+    app.patch("/products/makeFeatured/:id", async (req, res) => {
       const productId = req.params.id;
       const query = { _id: new ObjectId(productId) }
       const update = {
@@ -125,7 +163,7 @@ async function run() {
       res.send(result);
     })
 
-    app.patch("/products/updateStatus/:id", async (req, res) =>{
+    app.patch("/products/updateStatus/:id", async (req, res) => {
       const productId = req.params.id;
       const status = req.query.status;
       const query = { _id: new ObjectId(productId) }
@@ -138,6 +176,17 @@ async function run() {
       res.send(result);
     })
 
+    app.patch("/products/upVote/:id", async (req, res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const update = {
+        $inc: { upVote: 1 }
+      }
+      const result = await productCollection.updateOne(query, update);
+      res.send(result);
+    })
+
+    
     app.delete("/products/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -145,10 +194,10 @@ async function run() {
       res.send(result);
     })
 
-    app.get("/featuredProducts", async (req, res) => {
-      const products = await featuredProductCollection.find().toArray();
-      res.send(products);
-    })
+    // app.get("/featuredProducts", async (req, res) => {
+    //   const products = await featuredProductCollection.find().toArray();
+    //   res.send(products);
+    // })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
