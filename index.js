@@ -31,7 +31,7 @@ async function run() {
     const database = client.db("InnovateX");
     const userCollection = database.collection("users");
     const productCollection = database.collection("Products");
-    const featuredProductCollection = database.collection("FeaturedProducts");
+    const reviewCollection = database.collection("Reviews");
 
 
     // User apis
@@ -56,18 +56,18 @@ async function run() {
       const userEmail = req.query.email;
       const query = { email: userEmail };
       const user = await userCollection.findOne(query);
-      if (user && user.upVotes) { 
-        const hasVoted = user.upVotes.includes(id); 
-        res.send(hasVoted); 
+      if (user && user.upVotes) {
+        const hasVoted = user.upVotes.includes(id);
+        res.send(hasVoted);
       } else {
         res.send(false);
       }
     });
 
-    app.patch("/users/upVotes/:id", async (req, res) =>{
+    app.patch("/users/upVotes/:id", async (req, res) => {
       const id = req.params.id;
       const userEmail = req.query.email;
-      const query = {email: userEmail};
+      const query = { email: userEmail };
       const update = {
         $push: {
           upVotes: id
@@ -176,22 +176,38 @@ async function run() {
       res.send(result);
     })
 
-    app.patch("/products/upVote/:id", async (req, res) =>{
+    app.patch("/products/upVote/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const update = {
         $inc: { upVote: 1 }
       }
       const result = await productCollection.updateOne(query, update);
       res.send(result);
-    })
+    });
 
-    
     app.delete("/products/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await productCollection.deleteOne(query);
       res.send(result);
+    });
+
+
+
+    // review apis
+
+    app.post("/reviews", async (req, res) =>{
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
+    app.get("/reviews/:id", async (req, res) =>{
+      const id = req.params.id;
+      const query = {productId: id};
+      const reviews = await reviewCollection.find(query).toArray();
+      res.send(reviews);
     })
 
     // app.get("/featuredProducts", async (req, res) => {
