@@ -32,6 +32,7 @@ async function run() {
     const userCollection = database.collection("users");
     const productCollection = database.collection("Products");
     const reviewCollection = database.collection("Reviews");
+    const reportCollection = database.collection("Reports");
 
 
     // User apis
@@ -64,17 +65,17 @@ async function run() {
       }
     });
 
-    app.patch("/users/upVotes/:id", async (req, res) => {
+    app.get("/users/downVoteStatus/:id", async (req, res) => {
       const id = req.params.id;
       const userEmail = req.query.email;
       const query = { email: userEmail };
-      const update = {
-        $push: {
-          upVotes: id
-        }
-      };
-      const result = await userCollection.updateOne(query, update);
-      res.send(result);
+      const user = await userCollection.findOne(query);
+      if (user && user.downVotes) {
+        const hasVoted = user.downVotes.includes(id);
+        res.send(hasVoted);
+      } else {
+        res.send(false);
+      }
     })
 
     app.get("/users/admin/:email", async (req, res) => {
@@ -96,6 +97,32 @@ async function run() {
       const result = await userCollection.updateOne(query, update);
       res.send(result);
     });
+
+    app.patch("/users/upVotes/:id", async (req, res) => {
+      const id = req.params.id;
+      const userEmail = req.query.email;
+      const query = { email: userEmail };
+      const update = {
+        $push: {
+          upVotes: id
+        }
+      };
+      const result = await userCollection.updateOne(query, update);
+      res.send(result);
+    })
+
+    app.patch("/users/downVotes/:id", async (req, res) => {
+      const id = req.params.id;
+      const userEmail = req.query.email;
+      const query = { email: userEmail };
+      const update = {
+        $push: {
+          downVotes: id
+        }
+      };
+      const result = await userCollection.updateOne(query, update);
+      res.send(result);
+    })
 
 
     // Product apis
@@ -186,6 +213,26 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/products/downVote/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const update = {
+        $inc: { downVote: 1 }
+      }
+      const result = await productCollection.updateOne(query, update);
+      res.send(result);
+    });
+
+    app.patch("/products/report/:id", async (req, res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const update = {
+        $inc: {report: 1}
+      }
+      const result = await productCollection.updateOne(query, update);
+      res.send(result);
+    })
+
     app.delete("/products/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -196,24 +243,28 @@ async function run() {
 
 
     // review apis
-
-    app.post("/reviews", async (req, res) =>{
+    app.post("/reviews", async (req, res) => {
       const review = req.body;
       const result = await reviewCollection.insertOne(review);
       res.send(result);
     });
 
-    app.get("/reviews/:id", async (req, res) =>{
+    app.get("/reviews/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {productId: id};
+      const query = { productId: id };
       const reviews = await reviewCollection.find(query).toArray();
       res.send(reviews);
     })
 
-    // app.get("/featuredProducts", async (req, res) => {
-    //   const products = await featuredProductCollection.find().toArray();
-    //   res.send(products);
-    // })
+
+    // Report apis
+    app.post("/reports", async (req, res) =>{
+      const report = req.body;
+      const result = await reportCollection.insertOne(report);
+      res.send(result);
+    })
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
