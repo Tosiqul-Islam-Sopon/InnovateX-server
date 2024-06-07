@@ -146,7 +146,13 @@ async function run() {
     app.get("/products/trendingProducts", async (req, res) => {
       const products = await productCollection.find().sort({ upVote: -1 }).limit(6).toArray();
       res.send(products);
-    })
+    });
+
+    app.get("/products/reportedProducts", async (req, res) => {
+      const query = { report: { $gt: 0 } };
+      const products = await productCollection.find(query).toArray();
+      res.send(products);
+    });
 
     app.get("/products/:email", async (req, res) => {
       const email = req.params.email;
@@ -161,7 +167,6 @@ async function run() {
       const product = await productCollection.findOne(query);
       res.send(product);
     });
-
 
     app.patch('/products/updateProduct/:id', async (req, res) => {
       const productId = req.params.id;
@@ -223,11 +228,11 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/products/report/:id", async (req, res) =>{
+    app.patch("/products/report/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const update = {
-        $inc: {report: 1}
+        $inc: { report: 1 }
       }
       const result = await productCollection.updateOne(query, update);
       res.send(result);
@@ -258,10 +263,17 @@ async function run() {
 
 
     // Report apis
-    app.post("/reports", async (req, res) =>{
+    app.post("/reports", async (req, res) => {
       const report = req.body;
       const result = await reportCollection.insertOne(report);
       res.send(result);
+    })
+
+    app.get("/reports/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { productId: id };
+      const reports = await reportCollection.find(query).toArray();
+      res.send(reports);
     })
 
 
