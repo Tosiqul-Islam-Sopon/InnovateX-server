@@ -303,6 +303,13 @@ async function run() {
       const query = { productId: id };
       const reports = await reportCollection.find(query).toArray();
       res.send(reports);
+    });
+
+    app.get("/adminStates", async (req, res) => {
+      const userCount = await userCollection.estimatedDocumentCount();
+      const productCount = await productCollection.estimatedDocumentCount();
+      const reviewCount = await reportCollection.estimatedDocumentCount();
+      res.send({ userCount, productCount, reviewCount })
     })
 
 
