@@ -33,6 +33,7 @@ async function run() {
     const productCollection = database.collection("Products");
     const reviewCollection = database.collection("Reviews");
     const reportCollection = database.collection("Reports");
+    const couponCollection = database.collection("Coupons");
 
 
     // User apis
@@ -305,11 +306,45 @@ async function run() {
       res.send(reports);
     });
 
+    // Admin States
     app.get("/adminStates", async (req, res) => {
       const userCount = await userCollection.estimatedDocumentCount();
       const productCount = await productCollection.estimatedDocumentCount();
       const reviewCount = await reportCollection.estimatedDocumentCount();
       res.send({ userCount, productCount, reviewCount })
+    })
+
+
+    // Coupon apis
+    app.post("/coupons", async (req, res) => {
+      const coupon = req.body;
+      const result = await couponCollection.insertOne(coupon);
+      res.send(result);
+    });
+
+    app.get("/coupons", async (req, res) => {
+      const coupons = await couponCollection.find().toArray();
+      res.send(coupons);
+    })
+
+    app.patch("/coupons/updateCoupon/:id", async (req, res) =>{
+      const id = req.params.id;
+      const newCoupon = req.body;
+      const query = {_id: new ObjectId(id)};
+      const update = {
+        $set: {
+          ...newCoupon
+        }
+      }
+      const result = await couponCollection.updateOne(query, update);
+      res.send(result);
+    })
+
+    app.delete("/coupons/deleteCoupon/:id", async (req, res) =>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await couponCollection.deleteOne(query);
+      res.send(result);
     })
 
 
