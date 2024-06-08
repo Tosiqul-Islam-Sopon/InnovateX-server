@@ -135,7 +135,36 @@ async function run() {
     app.get("/products", async (req, res) => {
       const products = await productCollection.find().toArray();
       res.send(products);
-    })
+    });
+
+    app.get('/products/pageProducts', async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const searchTags = req.query.search ? req.query.search.split(' ') : [];
+
+      const query = searchTags.length > 0
+        ? { tags: { $in: searchTags.map(tag => new RegExp(tag, 'i')) } }
+        : {};
+
+      const result = await productCollection.find(query)
+        .skip((page - 1) * size)
+        .limit(size)
+        .toArray();
+
+      res.send(result);
+    });
+
+    app.get("/products/productCount", async (req, res) => {
+      const searchTags = req.query.search ? req.query.search.split(' ') : [];
+
+      const query = searchTags.length > 0
+        ? { tags: { $in: searchTags.map(tag => new RegExp(tag, 'i')) } }
+        : {};
+
+      const count = await productCollection.countDocuments(query);
+      res.send({ count });
+    });
+
 
     app.get("/products/featuredProducts", async (req, res) => {
       const query = { featured: 'true' };
