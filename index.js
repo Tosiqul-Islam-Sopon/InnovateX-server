@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -34,6 +35,7 @@ async function run() {
     const reviewCollection = database.collection("Reviews");
     const reportCollection = database.collection("Reports");
     const couponCollection = database.collection("Coupons");
+    const paymentCollection = database.collection("payments");
 
 
     // User apis
@@ -52,6 +54,13 @@ async function run() {
       const users = await userCollection.find().toArray();
       res.send(users);
     });
+
+    app.get("/user/:email", async (req, res) =>{
+      const email = req.params.email;
+      const query = {email: email};
+      const user = await userCollection.findOne(query);
+      res.send(user);
+    })
 
     app.get("/users/upVoteStatus/:id", async (req, res) => {
       const id = req.params.id;
@@ -327,10 +336,10 @@ async function run() {
       res.send(coupons);
     })
 
-    app.patch("/coupons/updateCoupon/:id", async (req, res) =>{
+    app.patch("/coupons/updateCoupon/:id", async (req, res) => {
       const id = req.params.id;
       const newCoupon = req.body;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const update = {
         $set: {
           ...newCoupon
@@ -340,11 +349,42 @@ async function run() {
       res.send(result);
     })
 
-    app.delete("/coupons/deleteCoupon/:id", async (req, res) =>{
+    app.delete("/coupons/deleteCoupon/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await couponCollection.deleteOne(query);
       res.send(result);
+    })
+
+
+    // payment intents
+    app.post("/create_payment_intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"]
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // Payment apis
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const query = { email: payment.userEmail };
+      const update = {
+        $set: {
+          premiumUser: 'true'
+        }
+      }
+      const paymentResponse = await paymentCollection.insertOne(payment);
+      const updateResponse = await userCollection.updateOne(query, update);
+      res.send({ paymentResponse, updateResponse });
     })
 
 
