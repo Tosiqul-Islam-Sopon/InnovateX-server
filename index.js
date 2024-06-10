@@ -12,8 +12,8 @@ app.use(express.json());
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://innovatex-5b8ae.web.app/",
-    "https://innovatex-5b8ae.firebaseapp.com/",
+    "https://innovatex-5b8ae.web.app",
+    "https://innovatex-5b8ae.firebaseapp.com",
   ]
 }));
 
